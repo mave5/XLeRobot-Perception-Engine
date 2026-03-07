@@ -1,0 +1,117 @@
+hardware:
+  use_mock: true
+  serial_port: null
+  motor_model: sts3215
+  pan_id: 1
+  tilt_id: 2
+  use_degrees: true
+  disable_torque_on_disconnect: true
+  max_relative_target: 8.0
+  servo:
+    pan_limits_deg: [-80.0, 80.0]
+    tilt_limits_deg: [-35.0, 45.0]
+    max_step_deg: 4.0
+    max_speed_deg_s: 120.0
+    manual_speed_deg_s: 35.0
+    command_smoothing_s: 0.12
+
+camera:
+  key: head_cam
+  source: synthetic
+  device_index: 0
+  width: 640
+  height: 480
+  fps: 30
+
+tracking:
+  start_tracking_enabled: false
+  loop_hz: 30.0
+  backend: motion
+  hfov_deg: 70.0
+  vfov_deg: 43.0
+  frame_target_x_ratio: 0.5
+  frame_target_y_ratio: 0.58
+  tilt_tracking_sign: -1.0
+  tilt_error_gain: 0.75
+  min_area_px: 700
+  detector_confidence: 0.2
+  acquire_confirm_frames: 3
+  detector_interval: 3
+  detector_max_dim_px: 480
+  track_hold_s: 0.4
+  track_match_distance_px: 180.0
+  target_selection_mode: sticky
+  person_target_x_ratio: 0.5
+  person_target_y_ratio: 0.62
+  person_min_full_body_aspect_ratio: 2.4
+  person_top_frame_ratio: 0.18
+  person_top_framing_gain: 0.45
+  person_closeup_height_ratio: 0.45
+  person_closeup_top_gain: 0.90
+  yolo_model: yolov8n.pt
+  yolo_pose_model: yolov8n-pose.pt
+  yolo_device: cpu
+  yolo_imgsz: 640
+  target_timeout_s: 0.7
+  reacquire_duration_s: 1.0
+  scan_speed_deg_s: 20.0
+  scan_tilt_center_deg: 0.0
+  scan_tilt_amplitude_deg: 10.0
+  scan_nod_hz: 0.2
+  pan_pid:
+    kp: 0.7
+    ki: 0.0
+    kd: 0.08
+    integral_limit: 25.0
+  tilt_pid:
+    kp: 0.6
+    ki: 0.0
+    kd: 0.06
+    integral_limit: 20.0
+
+scene:
+  summary_hz: 1.0
+  memory_seconds: 30.0
+  interactive_hold_s: 2.0
+  use_ollama: false
+  vlm_model: qwen2.5vl:3b
+  ollama_url: http://127.0.0.1:11434
+  ollama_timeout_s: 20.0
+  ollama_keep_alive: 10m
+  max_image_dim_px: 672
+  vlm_only_on_significant_change: true
+  vlm_change_threshold: 0.08
+  vlm_change_sample_dim_px: 96
+  vlm_target_center_change_ratio: 0.12
+  vlm_target_area_change_ratio: 0.28
+  vlm_force_refresh_s: 20.0
+  use_brain: false
+  brain_model: qwen2.5:1.5b
+  brain_temperature: 0.5
+  brain_max_tokens: 96
+  include_chat_history: true
+  chat_history_max_turns: 10
+  use_openai: false
+  openai_model: gpt-4.1-mini
+  openai_api_key_env: OPENAI_API_KEY
+
+runtime:
+  run_duration_s: 0.0
+  enable_dialog: true
+  visualize: true
+  web_preview: false
+  web_host: 127.0.0.1
+  web_port: 8765
+  speech:
+    enabled: false
+    backend: piper
+    model_path: ../en_US-lessac-medium.onnx
+    config_path: null
+    audio_player: paplay
+    speaker_id: null
+    length_scale: 1.0
+    noise_scale: null
+    noise_w_scale: null
+    volume: 1.0
+    use_cuda: false
+    lead_in_ms: 250
