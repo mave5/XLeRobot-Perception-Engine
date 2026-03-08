@@ -34,7 +34,7 @@ A runnable starter project for:
 ## Quick start (mock mode, runnable now)
 
 ```bash
-cd /path/to/robotics/xlerobot_personality
+cd /path/to/this-repo
 python -m venv .venv
 source .venv/bin/activate
 pip install -e .
@@ -84,7 +84,7 @@ If `runtime.speech.enabled: true`, each terminal answer is also spoken with a lo
 Install the optional Piper dependency and download a voice:
 
 ```bash
-cd /path/to/robotics/xlerobot_personality
+cd /path/to/this-repo
 source .venv/bin/activate
 pip install -e ".[piper]"
 python3 -m piper.download_voices en_US-lessac-medium
@@ -112,7 +112,7 @@ For headless servers or Windows SSH sessions, use the browser preview instead of
 
 ```bash
 # on the server
-cd /path/to/robotics/xlerobot_personality
+cd /path/to/this-repo
 source .venv/bin/activate
 PYTHONPATH=src python -m xlerobot_personality.main \
   --config configs/local_demo.yaml \
@@ -237,7 +237,7 @@ Current support assumes:
 For the YOLO backend, install the optional dependency in the same virtualenv:
 
 ```bash
-cd /path/to/robotics/xlerobot_personality
+cd /path/to/this-repo
 source .venv/bin/activate
 pip install -e ".[yolo]"
 ```
@@ -257,7 +257,7 @@ If `yolov8n.pt` is not already on disk, Ultralytics will try to download it on f
 Install the required motor support in the same virtualenv:
 
 ```bash
-cd /path/to/robotics/xlerobot_personality
+cd /path/to/this-repo
 source .venv/bin/activate
 pip install "lerobot[feetech]"
 ```
@@ -285,7 +285,7 @@ Important:
 Generate the first calibration file with the interactive head utility:
 
 ```bash
-cd /path/to/robotics/xlerobot_personality
+cd /path/to/this-repo
 source .venv/bin/activate
 PYTHONPATH=src python -m xlerobot_personality.head_calibrate \
   --config configs/real_head.example.yaml
@@ -311,7 +311,7 @@ There is also a helper launcher:
 Launch on real hardware:
 
 ```bash
-cd /path/to/robotics/xlerobot_personality
+cd /path/to/this-repo
 source .venv/bin/activate
 PYTHONPATH=src python -m xlerobot_personality.main \
   --config configs/real_head.example.yaml \
