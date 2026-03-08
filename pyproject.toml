@@ -15,6 +15,7 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
+feetech = ["lerobot[feetech]>=0.4.1"]
 openai = ["openai>=1.0.0"]
 piper = ["piper-tts>=1.4.1"]
 yolo = ["ultralytics>=8.0.0"]

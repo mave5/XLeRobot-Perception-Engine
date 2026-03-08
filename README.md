@@ -1,4 +1,8 @@
-# XLeRobot Personality Starter (Python)
+# XLeRobot Perception Enigine
+
+| Tracking | Sweeping |
+| --- | --- |
+| <img src="media/xlerobot-front.gif" alt="XLeRobot front view showing perception engine output" width="320"> | <img src="media/xlerobot-back.gif" alt="XLeRobot back view showing tracking capability" width="320"> |
 
 A runnable starter project for:
 
@@ -129,6 +133,8 @@ Then open:
 http://localhost:8765
 ```
 
+![Browser preview of XLeRobot Perception Enigine](media/xlerobot-perception-engine.png)
+
 The page shows the annotated frame, state, pan/tilt values, scene summary, and a stop button.
 It also provides:
 
@@ -251,9 +257,9 @@ If `yolov8n.pt` is not already on disk, Ultralytics will try to download it on f
 Install the required motor support in the same virtualenv:
 
 ```bash
-cd /path/to/lerobot
-source /path/to/robotics/xlerobot_personality/.venv/bin/activate
-pip install -e ".[feetech]"
+cd /path/to/robotics/xlerobot_personality
+source .venv/bin/activate
+pip install "lerobot[feetech]"
 ```
 
 Find your hardware:
@@ -320,9 +326,3 @@ Or use the helper script:
 ```bash
 ./mybash/run_real_browser.sh
 ```
-
-## Suggested next steps
-
-1. Add browser controls for switching between `motion`, `hog_person`, and `yolo_person` at runtime.
-2. Add microphone input for hands-free voice interaction.
-3. Add policy layer for intent-based head gestures (gaze lock, nod, look-at-speaker).
