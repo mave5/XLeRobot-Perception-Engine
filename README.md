@@ -1,14 +1,16 @@
 # XLeRobot Perception Enigine
 
+![Browser preview of XLeRobot Perception Enigine](media/xlerobot-perception-engine.png)
+
 | Tracking | Sweeping |
 | --- | --- |
-| <img src="media/xlerobot-front.gif" alt="XLeRobot front view showing perception engine output" width="320"> | <img src="media/xlerobot-back.gif" alt="XLeRobot back view showing tracking capability" width="320"> |
+| <img src="media/xlerobot-front.gif" alt="XLeRobot front view showing perception engine output" height="280"> | <img src="media/xlerobot-back.gif" alt="XLeRobot back view showing tracking capability" height="280"> |
 
-A runnable starter project for:
+A runnable starter project adding perception capablity to [XLeRobot](https://github.com/Vector-Wangel/XLeRobot):
 
 1. Real-time pan/tilt camera head tracking (moving objects in FOV)
 2. Scene description and simple conversational interaction
-3. LeRobot-compatible robot wrapper for easy migration to real hardware
+3. [LeRobot](https://github.com/huggingface/lerobot) compatible robot wrapper for easy migration to real hardware
 
 ## What is implemented
 
@@ -44,9 +46,9 @@ python -m xlerobot_personality.main --dry-run --visualize
 Type questions in terminal while it runs (for example: `what do you see?`).
 Type `quit` to stop.
 
-## Ollama vision scene descriptions
+## Vision scene descriptions
 
-The scene loop can now generate a short camera description every second with a local Ollama vision model.
+The scene loop can generate a short camera description every second with a local Ollama vision model.
 
 Start Ollama and pull a vision checkpoint (plus an optional lightweight chat model for robot dialogue):
 
@@ -132,8 +134,6 @@ Then open:
 ```text
 http://localhost:8765
 ```
-
-![Browser preview of XLeRobot Perception Enigine](media/xlerobot-perception-engine.png)
 
 The page shows the annotated frame, state, pan/tilt values, scene summary, and a stop button.
 It also provides:
