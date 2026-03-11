@@ -6,34 +6,14 @@
 | --- | --- |
 | <img src="media/xlerobot-front.gif" alt="XLeRobot front view showing perception engine output" height="280"> | <img src="media/xlerobot-back.gif" alt="XLeRobot back view showing tracking capability" height="280"> |
 
-A runnable starter project adding perception capablity to [XLeRobot](https://github.com/Vector-Wangel/XLeRobot):
+A runnable project adding perception capablity to [XLeRobot](https://github.com/Vector-Wangel/XLeRobot):
 
 1. Real-time pan/tilt camera head tracking (moving objects in FOV)
 2. Scene description and simple conversational interaction
 3. [LeRobot](https://github.com/huggingface/lerobot) compatible robot wrapper for easy migration to real hardware
 
-## What is implemented
 
-- `xlerobot_personality.xlerobot_head.XLERobotHead`
-  - LeRobot-style `Robot` API (`connect`, `get_observation`, `send_action`, `disconnect`)
-  - Pan/tilt action keys: `pan.pos`, `tilt.pos`
-  - Camera observation key: `head_cam`
-  - Works in `mock` mode (no hardware) and in `feetech+camera` mode (starter wiring)
-- `xlerobot_personality.tracking_controller`
-  - Detector-backed target tracking from camera frames
-  - PID-based pan/tilt control with safety clamps and step limiting
-  - Personality FSM: `IDLE_SCAN`, `TRACKING`, `REACQUIRE`, `INTERACTING`
-- `xlerobot_personality.scene_agent`
-  - Keeps short scene memory
-  - Produces periodic scene summaries
-  - Can describe camera frames at 1 Hz with a local Ollama vision model such as `qwen2.5vl:3b`
-  - Can run an Ollama chat "brain" that fuses VLM scene summary + tracker context + user query
-  - Replies in a cute, concise, witty style when the Ollama brain is enabled
-  - Optional OpenAI VLM hook if `openai` dependency and key are configured
-- `xlerobot_personality.orchestrator`
-  - Async loops for tracking, scene summarization, and dialog
-
-## Quick start (mock mode, runnable now)
+## Quick start (mock mode)
 
 ```bash
 cd /path/to/this-repo
@@ -46,6 +26,97 @@ python -m xlerobot_personality.main --dry-run --visualize
 Type questions in terminal while it runs (for example: `what do you see?`).
 Type `quit` to stop.
 
+
+
+## Running on real hardware
+
+
+### Calibrate Servos
+Find your hardware:
+
+```bash
+lerobot-find-port
+lerobot-find-cameras opencv
+```
+
+Then edit [real_head.example.yaml](configs/real_head.example.yaml):
+
+- set `hardware.serial_port`
+- set the real `pan_id` and `tilt_id`
+- set `camera.device_index`
+- set `hardware.robot_id`
+- set `hardware.calibration_dir` to the folder containing `<robot_id>.json`
+- config path fields may use `~`, `${HOME}`, or relative paths resolved from the config file location
+
+Important:
+
+- this app reads and writes motor positions in normalized units, so the calibration file must exist before running
+
+Generate the first calibration file with the interactive head utility:
+
+```bash
+cd /path/to/this-repo
+source .venv/bin/activate
+PYTHONPATH=src python -m xlerobot_personality.head_calibrate \
+  --config configs/real_head.example.yaml
+```
+
+The utility will:
+
+- connect to the Feetech bus on `hardware.serial_port`
+- ask you to place the head in a neutral forward pose
+- record the raw encoder center offsets
+- ask you to sweep pan and tilt through their full safe ranges
+- save `<hardware.robot_id>.json` in `hardware.calibration_dir`
+
+
+There is also a helper launcher:
+
+```bash
+./mybash/calibrate_head.sh
+```
+
+### Launch on real hardware
+
+```bash
+cd /path/to/this-repo
+source .venv/bin/activate
+PYTHONPATH=src python -m xlerobot_personality.main \
+  --config configs/real_head.example.yaml \
+  --web-preview \
+  --no-visualize
+```
+
+The sample real-head config enables `scene.use_ollama: true` with `qwen2.5vl:3b`, so once `ollama serve` is up you should see a short scene paragraph at 1 Hz in both the terminal and browser preview.
+
+Or use the helper script:
+
+```bash
+./mybash/run_real_browser.sh
+```
+
+## Tracking
+Current support assumes:
+
+- pan/tilt servos are Feetech servos supported by LeRobot
+- camera is available through OpenCV (`camera.source: opencv`)
+- you will either point to an existing head calibration JSON or generate one with the utility below
+- real camera auto-tracking uses `yolo_person` when `ultralytics` is installed, otherwise it falls back to `hog_person`
+
+
+Then set either:
+
+- `tracking.backend: auto` to prefer YOLO when available
+- or `tracking.backend: yolo_person` to require YOLO explicitly
+
+The default sample config uses:
+
+- `tracking.backend: auto`
+- `tracking.yolo_model: yolov8n.pt`
+
+If `yolov8n.pt` is not already on disk, Ultralytics will try to download it on first run.
+
+
 ## Vision scene descriptions
 
 The scene loop can generate a short camera description every second with a local Ollama vision model.
@@ -53,12 +124,12 @@ The scene loop can generate a short camera description every second with a local
 Start Ollama and pull a vision checkpoint (plus an optional lightweight chat model for robot dialogue):
 
 ```bash
-ollama pull qwen2.5vl:3b
-ollama pull qwen2.5:1.5b
+ollama pull qwen2.5vl:3b # VLM
+ollama pull qwen2.5:1.5b # LLM
 ollama serve
 ```
 
-Enable it in config:
+Make sure it is enabled in config:
 
 ```yaml
 scene:
@@ -83,34 +154,18 @@ If `runtime.speech.enabled: true`, each terminal answer is also spoken with a lo
 
 ## Piper speech output
 
-Install the optional Piper dependency and download a voice:
+Download a Piper voice:
 
 ```bash
 cd /path/to/this-repo
 source .venv/bin/activate
-pip install -e ".[piper]"
 python3 -m piper.download_voices en_US-lessac-medium
 ```
 
-Then point config at the downloaded `.onnx` file:
-
-```yaml
-runtime:
-  speech:
-    enabled: true
-    backend: piper
-    model_path: /path/to/en_US-lessac-medium.onnx
-    config_path: null
-    audio_player: auto
-```
-
-If `config_path` is omitted, the app defaults to `<model_path>.json`.
-If the first syllable gets clipped on your audio device, increase `runtime.speech.lead_in_ms` to add a little silence before each spoken reply.
-On Ubuntu/PipeWire/PulseAudio setups, `paplay` is usually a better first choice than `aplay` for avoiding clipped sentence starts.
 
 ## Web preview over SSH
 
-For headless servers or Windows SSH sessions, use the browser preview instead of X11:
+For headless servers or SSH sessions, use the browser preview:
 
 ```bash
 # on the server
@@ -136,23 +191,33 @@ http://localhost:8765
 ```
 
 The page shows the annotated frame, state, pan/tilt values, scene summary, and a stop button.
-It also provides:
 
-- Press-and-hold arrow-button teleop for pan/tilt
-- Press-and-hold keyboard teleop with `W/A/S/D` or arrow keys
-- Adjustable manual-speed slider in the browser
-- `Pause Tracking` / `Resume Tracking` toggle in the browser
-- Keyboard shortcut `T` to toggle tracking
+By default, the app now starts in auto head-control mode. Use `Resume Tracking` in the browser to enable/disable auto-tracking.
 
-By default, the app now starts in manual head-control mode. Use `Resume Tracking` in the browser to enable auto-tracking.
+
+## What is implemented
+
+- `xlerobot_personality.xlerobot_head.XLERobotHead`
+  - LeRobot-style `Robot` API (`connect`, `get_observation`, `send_action`, `disconnect`)
+  - Pan/tilt action keys: `pan.pos`, `tilt.pos`
+  - Camera observation key: `head_cam`
+  - Works in `mock` mode (no hardware) and in `feetech+camera` mode (starter wiring)
+- `xlerobot_personality.tracking_controller`
+  - Detector-backed target tracking from camera frames
+  - PID-based pan/tilt control with safety clamps and step limiting
+  - Personality FSM: `IDLE_SCAN`, `TRACKING`, `REACQUIRE`, `INTERACTING`
+- `xlerobot_personality.scene_agent`
+  - Keeps short scene memory
+  - Produces periodic scene summaries
+  - Can describe camera frames at 1 Hz with a local Ollama vision model such as `qwen2.5vl:3b`
+  - Can run an Ollama chat "brain" that fuses VLM scene summary + tracker context + user query
+  - Replies in a cute, concise, witty style when the Ollama brain is enabled
+  - Optional OpenAI VLM hook if `openai` dependency and key are configured
+- `xlerobot_personality.orchestrator`
+  - Async loops for tracking, scene summarization, and dialog
+
 
 ## Configuration
-
-Use the provided config:
-
-```bash
-python -m xlerobot_personality.main --config configs/local_demo.yaml --dry-run
-```
 
 Main fields:
 
@@ -213,116 +278,3 @@ Main fields:
 - `runtime.speech.volume`: output volume passed to Piper synthesis
 - `runtime.speech.use_cuda`: use CUDA for Piper inference if supported
 - `runtime.speech.lead_in_ms`: prepend this many milliseconds of silence before playback to avoid clipped sentence starts
-
-## Real hardware integration notes
-
-- For actual pan/tilt servos (Feetech), set:
-  - `hardware.use_mock: false`
-  - `hardware.serial_port: /dev/ttyUSB...`
-  - servo IDs in `hardware.pan_id`, `hardware.tilt_id`
-- For LeRobot camera pipeline, set:
-  - `camera.source: lerobot`
-
-The `XLERobotHead` class is written to use LeRobot APIs when available and otherwise remain runnable in mock mode.
-
-### Running on real hardware
-
-Current support assumes:
-
-- pan/tilt servos are Feetech servos supported by LeRobot
-- camera is available through OpenCV (`camera.source: opencv`)
-- you will either point to an existing head calibration JSON or generate one with the utility below
-- real camera auto-tracking uses `yolo_person` when `ultralytics` is installed, otherwise it falls back to `hog_person`
-
-For the YOLO backend, install the optional dependency in the same virtualenv:
-
-```bash
-cd /path/to/this-repo
-source .venv/bin/activate
-pip install -e ".[yolo]"
-```
-
-Then set either:
-
-- `tracking.backend: auto` to prefer YOLO when available
-- or `tracking.backend: yolo_person` to require YOLO explicitly
-
-The default sample config uses:
-
-- `tracking.backend: auto`
-- `tracking.yolo_model: yolov8n.pt`
-
-If `yolov8n.pt` is not already on disk, Ultralytics will try to download it on first run.
-
-Install the required motor support in the same virtualenv:
-
-```bash
-cd /path/to/this-repo
-source .venv/bin/activate
-pip install "lerobot[feetech]"
-```
-
-Find your hardware:
-
-```bash
-lerobot-find-port
-lerobot-find-cameras opencv
-```
-
-Then edit [real_head.example.yaml](configs/real_head.example.yaml):
-
-- set `hardware.serial_port`
-- set the real `pan_id` and `tilt_id`
-- set `camera.device_index`
-- set `hardware.robot_id`
-- set `hardware.calibration_dir` to the folder containing `<robot_id>.json`
-- config path fields may use `~`, `${HOME}`, or relative paths resolved from the config file location
-
-Important:
-
-- this app reads and writes motor positions in normalized units, so the calibration file must exist before running
-
-Generate the first calibration file with the interactive head utility:
-
-```bash
-cd /path/to/this-repo
-source .venv/bin/activate
-PYTHONPATH=src python -m xlerobot_personality.head_calibrate \
-  --config configs/real_head.example.yaml
-```
-
-The utility will:
-
-- connect to the Feetech bus on `hardware.serial_port`
-- ask you to place the head in a neutral forward pose
-- record the raw encoder center offsets
-- ask you to sweep pan and tilt through their full safe ranges
-- save `<hardware.robot_id>.json` in `hardware.calibration_dir`
-
-If you want to override the config file values, pass explicit CLI flags such as `--serial-port`, `--pan-id`, and
-`--tilt-id`.
-
-There is also a helper launcher:
-
-```bash
-./mybash/calibrate_head.sh
-```
-
-Launch on real hardware:
-
-```bash
-cd /path/to/this-repo
-source .venv/bin/activate
-PYTHONPATH=src python -m xlerobot_personality.main \
-  --config configs/real_head.example.yaml \
-  --web-preview \
-  --no-visualize
-```
-
-The sample real-head config enables `scene.use_ollama: true` with `qwen2.5vl:3b`, so once `ollama serve` is up you should see a short scene paragraph at 1 Hz in both the terminal and browser preview.
-
-Or use the helper script:
-
-```bash
-./mybash/run_real_browser.sh
-```
