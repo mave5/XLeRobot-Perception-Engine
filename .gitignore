@@ -4,3 +4,4 @@ __pycache__/
 *.pt
 *.onnx
 *.onnx.json
+*.egg-info
